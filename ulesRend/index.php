@@ -1,15 +1,53 @@
 <?php
-$osztaly = array(
+//lbIT-tP_@(Fc5cI@
+$servername = "localhost";
+$username = "php_teszter";
+$password = "lbIT-tP_@(Fc5cI@";
+$dbname = "php_teszt";
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " + $conn->connect_error);
+}
+//echo ("Success");
+
+/*$osztaly = array(
     array(" - ", "Tanári asztal", "Gulyás Zsolt Máté", "Lénárt Áron", "-"),
     array("Mészáros Marcell", "Básti Domonkos", "Keindl Bercel", "Kiss Balázs", "-"),
     array("Csik Melinda", "Karakas Olivér Roland", "Ábrahám Dávid", "Détári Leon", "Togyeriska Viktor"),
     array(" - ", " - ", "Giczi Attila", "Preil Ákos", "Sivinger Miklós")
 );
 ?>
+<?php
 
+foreach ($osztaly as $key => $sor) {
+
+    foreach ($sor as $oszlop => $nev) {
+        $sql = "INSERT INTO osztaly (nev, sor, oszlop) VALUES ('" . $nev . "', $key, $oszlop)";
+        if ($conn->query($sql) === TRUE) {
+          //  echo "cogany added"  . $nev . "\n";
+        } else {
+            echo "Error: " . $sql . "<br>" . $conn->error;
+        }
+    }
+}
+
+/*$sql = "SELECT id, nev, sor, oszlop FROM osztaly";
+$result = $conn->query($sql);
+$sor = NULL;
+if ($result->num_rows > 0) {
+    // output data of each row
+    while ($row = $result->fetch_assoc()) {
+        if($sor != $row["sor"])
+        echo "id: " . $row["id"] . " - Name: " . $row["nev"] . " " . $row["sor"] . " " . $row["oszlop"] . "<br>";
+    }
+} else {
+    echo "0 results";
+}*/
+?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hu">
 
 <head>
     <meta charset="UTF-8">
@@ -20,7 +58,7 @@ $osztaly = array(
 </head>
 
 <body style="padding: 10px;">
-   <!-- <table class="table table-bordered border border-dark border-4">
+    <!-- <table class="table table-bordered border border-dark border-4">
         <thead>
             <tr>
                 <th scope="col">1. sor</th>
@@ -76,34 +114,39 @@ $osztaly = array(
                 <th scope="col">Első Oszlop</th>
                 <th scope="col">Második Oszlop</th>
                 <th scope="col">Folyosó</th>
-                <th scope="col">Harmadik Oszlop </th>
+                <th scope="col">Harmadik Oszlop</th>
                 <th scope="col">Negyedik Oszlop</th>
                 <th scope="col">Folyosó</th>
                 <th scope="col">Ötödik Oszlop</th>
             </tr>
         </thead>
         <tbody>
-            <?php
-            $i=1;
-            foreach($osztaly as $key => $sor) {
-            ?><tr>
-                    <th scope="row"><?php echo $key +1?></th>
-                    <?php
-                    foreach($sor as $oszlop => $nev){
-                        echo "<td>$nev</td>";
-                        if($oszlop == 1 or $oszlop == 3){
-                            echo "<td> </td>";
+        <?php                      
+                    $sql = "SELECT id, nev, sor, oszlop FROM osztaly";
+                    $result = $conn->query($sql);
+
+                    $sor = NULL;
+                    if ($result->num_rows > 0) {
+                        while($row = $result->fetch_assoc()) {
+                            if($sor !== $row["sor"]) {
+                                ?>
+                                <tr>
+                                <th scope="row"><?php echo $row["sor"] + 1?></th>
+                                <?php
+                                $sor = $row["sor"];
+                            }
+                            echo "<td>" .$row["nev"]. "</td>";
+                            if($row["oszlop"] == 1 || $row["oszlop"] == 3){
+                                echo("<td></td>");
+                            };
                         }
-                    }
-                    ?>
-                    
-                </tr>
-            <?php
-            $i++;
-            }
-            ?>
+                        } else {
+                            echo "0 results";
+                        }
+                ?>
         </tbody>
     </table>
+
 
     <style>
         body {
@@ -126,3 +169,7 @@ $osztaly = array(
 </body>
 
 </html>
+<?php
+
+$conn->close();
+?>
