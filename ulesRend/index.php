@@ -64,7 +64,8 @@ include "common/head.inc.php";
                 }
 
                 if (isset($_SESSION["id"]) && $_SESSION["id"] == $row["id"]) {
-                    echo "<td $class><img src='$profileImagePath' alt='Profile' class='img-thumbnail' style='width: 50px; height: 50px;'> <a href='#'>" . $row["nev"] . "</a></td>";
+                    echo "<td $class><img src='$profileImagePath' alt='Profile' class='img-thumbnail' style='width: 50px; height: 50px;'> 
+                          <a href='profil.php'>" . $row["nev"] . "</a></td>";
                 } else {
                     echo "<td $class>" . $row["nev"] . "</td>";
                 }

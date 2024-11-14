@@ -8,66 +8,52 @@ if (!isset($_SESSION["id"])) {
     exit();
 }
 
-$valasz = "";
+$target_dir = "./uploads/";
+$default_image = "default.png";
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES["fileToUpload"])) {
-    $target_dir = "uploads/";
-    $target_file = $target_dir . $_SESSION["id"] . ".jpg";  // Profile image is stored with user ID as filename
-    $uploadOk = 1;
-    $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES["fileToUpload"])) {
+    $filename = basename($_FILES["fileToUpload"]["name"]);
+    $filetype = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-    if (isset($_POST["submit"])) {
-        $check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
-        if ($check !== false) {
-            $valasz = "A fájl képként van formázva - " . $check["mime"];
-            $uploadOk = 1;
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+    if (in_array($filetype, $allowed_extensions)) {
+        $target_file = $target_dir . $_SESSION["id"] . ".jpg";
+        
+        if ($filetype !== 'jpg' && $filetype !== 'jpeg') {
+            $image = imagecreatefromstring(file_get_contents($_FILES["fileToUpload"]["tmp_name"]));
+            imagejpeg($image, $target_file);
+            imagedestroy($image);
         } else {
-            $valasz = "A fájl nem kép.";
-            $uploadOk = 0;
+            move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file);
         }
-    }
 
-    if ($_FILES["fileToUpload"]["size"] > 5000000) {
-        $valasz = "A fájl túl nagy.";
-        $uploadOk = 0;
-    }
-
-    if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
-        $valasz = "Csak JPG, JPEG, PNG és GIF fájlok engedélyezettek.";
-        $uploadOk = 0;
-    }
-
-    if ($uploadOk == 0) {
-        $valasz = "A fájl nem lett feltöltve.";
+        echo "A fájl sikeresen feltöltve!";
     } else {
-        if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-            $valasz = "A fájl ". htmlspecialchars(basename($_FILES["fileToUpload"]["name"])) . " sikeresen feltöltve.";
-        } else {
-            $valasz = "Hiba történt a fájl feltöltésekor.";
-        }
+        echo "Hiba: Csak JPG, JPEG, PNG és GIF formátumok engedélyezettek.";
+    }
+} elseif (isset($_GET["action"]) && $_GET["action"] == 'deleteimg') {
+    $target_file = $target_dir . $_SESSION["id"] . ".jpg";
+    if (file_exists($target_file)) {
+        unlink($target_file);
+        echo "A profilkép törlésre került.";
     }
 }
 
-$profileImagePath = "uploads/" . $_SESSION["id"] . ".jpg";
-if (!file_exists($profileImagePath)) {
-    $profileImagePath = "uploads/default.png"; 
-}
+$profileImagePath = file_exists($target_dir . $_SESSION["id"] . ".jpg") ? $target_dir . $_SESSION["id"] . ".jpg" : $target_dir . $default_image;
 ?>
 
-<div>
-    <?php
-    if (isset($valasz)) {
-        echo $valasz;
-    }
-    ?>
-    <h2>Profilkép módosítása</h2>
-    <img src="<?php echo $profileImagePath; ?>" alt="Profilkép" class="img-thumbnail" style="width: 150px; height: 150px;">
+<div class="mt-5 text-center">
+    <h1>Profil</h1>
+    <img src="<?php echo $profileImagePath; ?>" alt="Profile" class="img-thumbnail mb-3" style="width: 150px; height: 150px;">
+    <p><a href="profil.php?action=deleteimg" class="btn btn-danger">Kép törlése</a></p>
+
     <form action="profil.php" method="post" enctype="multipart/form-data">
-        <label for="fileToUpload">Válaszd ki a fájlt:</label>
-        <input type="file" name="fileToUpload" id="fileToUpload">
-        <input type="submit" value="Feltöltés" name="submit">
+        <label for="fileToUpload" class="form-label">Válassz egy új képet:</label>
+        <input type="file" name="fileToUpload" id="fileToUpload" class="form-control mb-3">
+        <input type="submit" value="Feltöltés" name="submit" class="btn btn-primary">
     </form>
 </div>
 
-</body>
-</html>
+<?php
+$conn->close();
+?>
