@@ -11,13 +11,18 @@ $valasz = "";
 $name = "";
 
 if (isset($_POST["felhasznalonev"]) && isset($_POST["jelszo"])) {
-    $sql = "SELECT id, nev, jelszo FROM osztaly WHERE felhasznalonev = \"" . $_POST["felhasznalonev"] . "\"";
-    $result = $conn->query($sql);
+    $sql = "SELECT id, nev, jelszo, isAdmin FROM osztaly WHERE felhasznalonev = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $_POST["felhasznalonev"]);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if ($row['jelszo'] === hash('sha256', $_POST['jelszo'])) {
             $_SESSION["id"] = $row["id"];
             $_SESSION["nev"] = $row["nev"];
+            $_SESSION["isAdmin"] = $row["isAdmin"]; 
             $valasz = "Üdv, " . $row["nev"] . "!";
             header("Location: index.php");
             exit();
@@ -30,12 +35,15 @@ if (isset($_POST["felhasznalonev"]) && isset($_POST["jelszo"])) {
 } elseif (isset($_SESSION["id"])) {
     unset($_SESSION["id"]);
     unset($_SESSION["nev"]);
+    unset($_SESSION["isAdmin"]);
 }
 
 $conn->close();
 
 include("common/head.inc.php");
 ?>
+
+
 
 <div class="mt-5 d-flex flex-column align-items-center">
     <h1 class="mb-4">Bejelentkezés</h1>

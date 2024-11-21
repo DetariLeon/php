@@ -1,58 +1,137 @@
 <?php
 session_start();
 require "common/db.inc.php";
-require "common/head.inc.php";
 
-if (!isset($_SESSION["id"])) {
+if (!isset($_SESSION['id'])) {
     header("Location: login.php");
     exit();
 }
 
-$target_dir = "./uploads/";
-$default_image = "default.png";
+$isAdmin = isset($_SESSION['isAdmin']) && $_SESSION['isAdmin'] == 1;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES["fileToUpload"])) {
-    $filename = basename($_FILES["fileToUpload"]["name"]);
-    $filetype = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+$target_dir = "uploads/";
+$message = "";
 
-    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
-    if (in_array($filetype, $allowed_extensions)) {
-        $target_file = $target_dir . $_SESSION["id"] . ".jpg";
-        
-        if ($filetype !== 'jpg' && $filetype !== 'jpeg') {
-            $image = imagecreatefromstring(file_get_contents($_FILES["fileToUpload"]["tmp_name"]));
-            imagejpeg($image, $target_file);
-            imagedestroy($image);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['fileToUpload']) && isset($_POST['userId'])) {
+    $userId = $_POST['userId'];
+    $file = $_FILES['fileToUpload'];
+    $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+    if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])) {
+        $target_file = $target_dir . $userId . ".jpg";
+
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            $message = "Kép sikeresen feltöltve!";
         } else {
-            move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file);
+            $message = "Hiba a kép feltöltése közben.";
         }
-
-        echo "A fájl sikeresen feltöltve!";
     } else {
-        echo "Hiba: Csak JPG, JPEG, PNG és GIF formátumok engedélyezettek.";
-    }
-} elseif (isset($_GET["action"]) && $_GET["action"] == 'deleteimg') {
-    $target_file = $target_dir . $_SESSION["id"] . ".jpg";
-    if (file_exists($target_file)) {
-        unlink($target_file);
-        echo "A profilkép törlésre került.";
+        $message = "Csak JPG, JPEG, PNG vagy GIF fájlok engedélyezettek.";
     }
 }
 
-$profileImagePath = file_exists($target_dir . $_SESSION["id"] . ".jpg") ? $target_dir . $_SESSION["id"] . ".jpg" : $target_dir . $default_image;
+if (isset($_GET['action']) && $_GET['action'] === 'deleteimg' && isset($_GET['userId'])) {
+    $userId = $_GET['userId'];
+    $target_file = $target_dir . $userId . ".jpg";
+
+    if (file_exists($target_file)) {
+        if (unlink($target_file)) {
+            $message = "A kép törölve.";
+        } else {
+            $message = "Hiba a kép törlésekor.";
+        }
+    } else {
+        $message = "Nincs kép törlésre.";
+    }
+}
+
+include "common/head.inc.php";
 ?>
 
-<div class="mt-5 text-center">
-    <h1>Profil</h1>
-    <img src="<?php echo $profileImagePath; ?>" alt="Profile" class="img-thumbnail mb-3" style="width: 150px; height: 150px;">
-    <p><a href="profil.php?action=deleteimg" class="btn btn-danger">Kép törlése</a></p>
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin profilkezelés</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1>Profilkép kezelése</h1>
+    <?php if ($message): ?>
+        <div class="alert alert-info"><?php echo $message; ?></div>
+    <?php endif; ?>
 
-    <form action="profil.php" method="post" enctype="multipart/form-data">
-        <label for="fileToUpload" class="form-label">Válassz egy új képet:</label>
-        <input type="file" name="fileToUpload" id="fileToUpload" class="form-control mb-3">
-        <input type="submit" value="Feltöltés" name="submit" class="btn btn-primary">
-    </form>
+    <?php if ($isAdmin): ?>
+        <h2>Adminisztrátor: Felhasználók képeinek kezelése</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Név</th>
+                    <th>Profilkép</th>
+                    <th>Új kép feltöltése</th>
+                    <th>Kép törlése</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $sql = "SELECT id, nev FROM osztaly";
+                $result = $conn->query($sql);
+
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        $profileImagePath = $target_dir . $row['id'] . ".jpg";
+
+                        if (!file_exists($profileImagePath)) {
+                            $profileImagePath = $target_dir . "default.png";
+                        }
+                        ?>
+                        <tr>
+                            <td><?php echo $row['id']; ?></td>
+                            <td><?php echo htmlspecialchars($row['nev']); ?></td>
+                            <td>
+                                <img src="<?php echo htmlspecialchars($profileImagePath); ?>" alt="Profilkép" class="img-thumbnail" style="width: 50px; height: 50px;">
+                            </td>
+                            <td>
+                                <form action="profil.php" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="userId" value="<?php echo $row['id']; ?>">
+                                    <input type="file" name="fileToUpload" required>
+                                    <button type="submit" class="btn btn-primary">Feltöltés</button>
+                                </form>
+                            </td>
+                            <td>
+                                <a href="profil.php?action=deleteimg&userId=<?php echo $row['id']; ?>" class="btn btn-danger">Törlés</a>
+                            </td>
+                        </tr>
+                        <?php
+                    }
+                } else {
+                    echo "<tr><td colspan='5'>Nincsenek felhasználók.</td></tr>";
+                }
+                ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <h2>Saját profilkép kezelése</h2>
+        <?php
+        $userId = $_SESSION['id'];
+        $profileImagePath = $target_dir . $userId . ".jpg";
+
+        if (!file_exists($profileImagePath)) {
+            $profileImagePath = $target_dir . "default.png";
+        }
+        ?>
+        <img src="<?php echo htmlspecialchars($profileImagePath); ?>" alt="Profilkép" class="img-thumbnail mb-3" style="width: 150px; height: 150px;">
+        <form action="profil.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="userId" value="<?php echo $userId; ?>">
+            <input type="file" name="fileToUpload" required>
+            <button type="submit" class="btn btn-primary">Feltöltés</button>
+        </form>
+    <?php endif; ?>
 </div>
+</body>
+</html>
 
 <?php
 $conn->close();

@@ -14,10 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-include "common/head.inc.php";
+include "common/head.inc.php"; 
 ?>
 
-<p><?php if (isset($nameErr)) echo $nameErr ?></p>
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Ülésrend</title>
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body>
+<p><?php if (isset($nameErr)) echo htmlspecialchars($nameErr); ?></p>
 
 <h1>13.i 1. csoport</h1>
 <h2 class="mb-4">Ülésrend</h2>
@@ -39,43 +47,48 @@ include "common/head.inc.php";
         $sql = "SELECT id, nev, sor, oszlop FROM osztaly ORDER BY sor, oszlop ASC";
         $result = $conn->query($sql);
 
-        $sor = NULL;
+        $sor = null; 
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 if ($sor !== $row["sor"]) {
-                    if ($sor !== NULL) echo "</tr>";
+                    if ($sor !== null) echo "</tr>";
                     ?>
                     <tr>
-                    <th scope="row"><?php echo $row["sor"] + 1 ?></th>
+                    <th scope="row"><?php echo $row["sor"] + 1; ?></th>
                     <?php
                     $sor = $row["sor"];
                 }
 
                 $profileImagePath = "uploads/" . $row["id"] . ".jpg";
-                if (!file_exists($profileImagePath)) {
-                    $profileImagePath = "uploads/default.png"; 
+                if (!is_file($profileImagePath)) { 
+                    $profileImagePath = "uploads/default.png";
                 }
 
                 $class = "";
                 if ($name != '') {
-                    if (strpos($row["nev"], $name) !== FALSE) {
+                    if (stripos($row["nev"], $name) !== false) { 
                         $class = "class=\"bg-danger\"";
                     }
                 }
 
                 if (isset($_SESSION["id"]) && $_SESSION["id"] == $row["id"]) {
-                    echo "<td $class><img src='$profileImagePath' alt='Profile' class='img-thumbnail' style='width: 50px; height: 50px;'> 
-                          <a href='profil.php'>" . $row["nev"] . "</a></td>";
+                    echo "<td $class>
+                            <img src='" . htmlspecialchars($profileImagePath) . "' alt='Profile' class='img-thumbnail' style='width: 50px; height: 50px;'> 
+                            <a href='profil.php'>" . htmlspecialchars($row["nev"]) . "</a>
+                          </td>";
                 } else {
-                    echo "<td $class>" . $row["nev"] . "</td>";
+                    echo "<td $class>
+                            <img src='" . htmlspecialchars($profileImagePath) . "' alt='Profile' class='img-thumbnail' style='width: 50px; height: 50px;'> 
+                            " . htmlspecialchars($row["nev"]) . "
+                          </td>";
                 }
 
                 if ($row["oszlop"] == 1 || $row["oszlop"] == 3) {
-                    echo("<td></td>");
+                    echo "<td></td>";
                 }
             }
         } else {
-            echo "nincs adat";
+            echo "<tr><td colspan='8'>Nincsenek adatok</td></tr>";
         }
         ?>
         </tr>
