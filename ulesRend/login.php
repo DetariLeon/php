@@ -1,6 +1,6 @@
 <?php
 session_start();
-require "common/db.inc.php";
+require "common/db.req.php";
 
 if (isset($_SESSION["id"]) && isset($_SESSION["nev"])) {
     header("Location: index.php");
