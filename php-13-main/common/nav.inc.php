@@ -12,7 +12,9 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="index.php">Home</a>
                     </li>
-                    <?php if (!isset($_SESSION["id"])) { ?>
+
+                    <?php
+                    if (!isset($_SESSION["id"])) { ?>
                         <li class="nav-item">
                             <a class="nav-link" href="login.php">Belépés</a>
                         </li>
@@ -20,24 +22,32 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                <?php echo htmlspecialchars($_SESSION["nev"]); ?>
+                                <?php echo $_SESSION["nev"]; ?>
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="profil.php">Profil</a></li>
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="logout.php">Kijelentkezés</a></li>
+                                <li><a class="dropdown-item" href="login.php">Kijelentkezés</a></li>
                             </ul>
                         </li>
-                    <?php } ?>
-                    <?php if (isset($_SESSION["isAdmin"]) && $_SESSION["isAdmin"] === "1") { ?>
+                    <?php }
+                    if (isset($_SESSION["isAdmin"]) and $_SESSION["isAdmin"] == "1") { ?>
                         <li class="nav-item">
                             <a class="nav-link" href="admin.php">Admin panel</a>
                         </li>
                     <?php } ?>
                 </ul>
+                <?php if (isset($searchBar) && $searchBar === true) { ?>
+                    <form class="d-flex" role="search" action="index.php" method="POST">
+                        <input onkeyup="showHint(this.value)" class="form-control me-2" type="search" placeholder="Keresés" aria-label="Search"
+                            name="keresett_nev" value="<?php echo $name; ?>">
+                        <button class="btn btn-outline-success" type="submit">Keresés</button>
+                    </form>
+                    <div id="txtHint">
+                    </div>
+                <?php } ?>
             </div>
         </div>
     </nav>
-</body>
